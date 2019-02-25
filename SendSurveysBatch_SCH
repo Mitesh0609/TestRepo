@@ -1,0 +1,16 @@
+/*****************************************************************************************************************
+* @Author Mitesh Kumar
+* @Created date 24/Feb/2019
+* @Modified date:
+* @description This is a Schedule class to schedule SendSurveys_Batch class
+* @Project :
+NOTE: 
+******************************************************************************************************************/
+public class SendSurveysBatch_SCH Implements Schedulable{
+	  public void execute(SchedulableContext sc) {
+    
+         SendSurveys_Batch surveyscheduler = new SendSurveys_Batch() ;
+         Database.executeBatch(surveyscheduler,1);                      // change the batch size based on the need 
+    }
+}
+
