@@ -1,0 +1,45 @@
+/*****************************************************************************************************************
+* @Author Mitesh Kumar
+* @Created date 24/Feb/2019
+* @Modified date:
+* @description This is a batch class to send email to contacts whose Langauage is not blank and Survey date before now and not null
+* @Project :
+NOTE: 
+******************************************************************************************************************/
+public class SendSurveys_Batch implements Database.Batchable<sObject>{
+
+  
+    public Database.QueryLocator start(Database.BatchableContext bc) {
+        // below query will return all the contact records whose Langauage is not blank and Survey date before now and not null
+    	return Database.getQueryLocator('Select id,Survey_Date__c from contact where Language__c!=null and Survey_Date__c<=today and Survey_Date__c!=null');
+    }
+    
+    public void execute(Database.BatchableContext bc, List<contact> ListContact){
+    list<id> contactId = new list<id>();         							      // contactId will hold contact id which will be passed to setTargetObjectIds in order to ensure heigher email limts and thus avoid exception.
+    list<contact> conlistupdate = new list<contact>();   					      // conlistupdate will be used to update field "Survey_Date__c=null" 
+        for(contact conId: ListContact){
+            conId.Survey_Date__c=null;
+            conlistupdate.add(conId);
+            contactId.add(conId.Id);
+        }
+
+        if(contactId!=null){   												      // check if list of contact is not null then go for messaging.
+            EmailTemplate et = [select id from EmailTemplate where developername='SendSurveyWithDiffLanguage' limit 1];   // retrive the template id 
+            Messaging.MassEmailMessage mail = new Messaging.MassEmailMessage();   // make sure mass email is enable in the environment before running the batch else exception will come.
+            mail.setTargetObjectIds(contactId);                                   // passing contact/lead.... will by pass the governer limit of email for 24 hours
+            mail.setTemplateId(et.id);					                          // pass template id "SendSurveyWithDiffLanguage"  for mail which will be deliverd to users.
+            
+            try{                
+                Messaging.sendEmail(new Messaging.MassEmailMessage[] { mail });   // send mail
+                update conlistupdate;											  // update all the contacts Survey Date field with Null.
+               }catch(dmlexception de){
+                system.debug('#Exception '+de);
+                }            
+         }
+        
+    }
+    
+    public void finish(Database.BatchableContext bc){
+            
+    }
+}
